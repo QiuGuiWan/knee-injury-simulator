@@ -13,7 +13,7 @@
 ![License](https://img.shields.io/badge/code-MIT-blue)
 ![Mobile](https://img.shields.io/badge/desktop%20%2B%20mobile-ready-0f8b8d)
 
-**在线体验：** 部署后访问 `https://<你的用户名>.github.io/<仓库名>/`
+**在线体验：** 部署后访问 `https://qiuguiwan.github.io/knee-injury-simulator/`
 （纯静态页面，零后端、零构建工具，可直接双击 `index.html` 打开）
 
 </div>
@@ -30,7 +30,7 @@
 
 ---
 
-## 为什么值得你给一个 Star？
+## 体验感如何？
 
 大多数「Three.js 解剖演示」停留在**模型旋转展示**：好看，但不能回答「这个动作为什么会伤」。这个项目把完整因果链做进了一个网页：
 
