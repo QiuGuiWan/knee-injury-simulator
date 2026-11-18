@@ -329,9 +329,13 @@ A运动项目/
 │   ├── human.json / human.bin     # 17 骨骼蒙皮 écorché 人体
 │   ├── human-data.js / knee-data.js # 内嵌兜底副本
 │   └── README.txt                 # 模型节点命名与替换说明
-├── docs/screenshots/              # README 截图
+├── docs/screenshots/              # README 截图与演示 GIF
 └── tools/
-    └── build_human_from_atlas.mjs # 人体资产离线构建脚本
+    ├── build_human_from_atlas.mjs # 人体资产离线构建脚本
+    ├── build_knee_from_atlas.py   # 膝关节模型构建（Z-Anatomy 抽取）
+    ├── build_knee_from_open3dmodel.py  # 膝关节模型构建（Open3DModel 几何 + 自有动画骨架）
+    ├── build_knee_model.py        # 纯程序化备用模型生成
+    └── inspect_glb.py             # GLB 结构检查
 ```
 
 ---
