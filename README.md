@@ -13,8 +13,8 @@
 ![License](https://img.shields.io/badge/code-MIT-blue)
 ![Mobile](https://img.shields.io/badge/desktop%20%2B%20mobile-ready-0f8b8d)
 
-**在线体验：** 部署后访问 `https://qiuguiwan.github.io/knee-injury-simulator/`
-（纯静态页面，零后端、零构建工具，可直接双击 `index.html` 打开）
+**在线体验：** 可直接访问 `https://qiuguiwan.github.io/knee-injury-simulator/`
+也可将code打包download（纯静态页面，零后端、零构建工具，可直接双击 `index.html` 打开）
 
 </div>
 
