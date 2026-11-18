@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>膝关节运动损伤受力仿真可视化系统 | 基于 Three.js</title>
+<meta name="description" content="基于 Three.js 的膝关节运动损伤受力仿真与康复矫正可视化系统：15 类动作 × 正误对比、真实解剖人体、膝关节应力热力与力学证据读数（科普教学用）" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="膝关节运动损伤受力仿真可视化系统 · Knee Loading Simulator" />
+<meta property="og:description" content="15 类日常/运动动作 × 正误对比 · 真实解剖人体 + 18 部件膝关节 · 实时受力热力 + 力学证据读数 · Three.js 纯前端" />
+<meta property="og:image" content="docs/screenshots/hero.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f8b8d'/%3E%3Cpath d='M24 14v14c0 6 4 10 4 14M40 14v14c0 6-4 10-4 14M22 50h20' stroke='%23fff' stroke-width='4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/style.css?v=20261118d" />
+</head>
+<body>
+
+<!-- ============ 顶部标题栏 ============ -->
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">KNEE</div>
+    <div class="brand-text">
+      <h1>膝关节运动损伤受力仿真可视化系统</h1>
+      <p>Knee Joint Loading Simulation &amp; Rehabilitation Visualization · Three.js 实时渲染</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="badge" id="badge-model">模型：内置解析模型</span>
+    <button class="ghost-btn" id="btn-usage" title="使用说明">使用说明</button>
+  </div>
+</header>
+
+<!-- ============ 主体：左画布 + 右面板 ============ -->
+<main class="layout">
+
+  <!-- ---------- 左：3D 画布 ---------- -->
+  <section class="stage" id="stage">
+    <div class="canvas-wrap" id="canvas-wrap">
+      <!-- Three.js canvas 由 main.js 注入 -->
+      <div class="stage-hint" id="stage-hint">
+        拖拽旋转人体 · 右上角小窗可拖拽查看膝关节 · 点击小窗空白切换主视角
+      </div>
+
+      <!-- 动作场景名（与全身人体主画面同屏） -->
+      <div class="scene-badge" id="scene-badge">健身房·深蹲架</div>
+
+      <!-- 分屏时的左右视角标签 -->
+      <div class="view-label" id="view-label-left" hidden>
+        <span class="dot dot-ok"></span>标准姿态 <em>正确力线</em>
+      </div>
+      <div class="view-label" id="view-label-right" hidden>
+        <span class="dot dot-bad"></span>错误姿态 <em>应力集中</em>
+      </div>
+      <div class="split-divider" id="split-divider" hidden></div>
+
+      <!-- 应力图例 -->
+      <div class="legend" id="legend">
+        <span class="legend-title">应力指数</span>
+        <div class="legend-bar"></div>
+        <div class="legend-scale"><span>0 低</span><span>0.5</span><span>1.0 高</span></div>
+      </div>
+
+      <!-- 左下角实时读数 -->
+      <div class="hud" id="hud">
+        <!-- 力学证据（画布内常驻，与模型同屏，肉眼可直接判读） -->
+        <div class="hud-mech">
+          <div class="hud-mech-top">
+            <div class="hud-mech-force"><b id="hud-force">1.0</b><span>×BW</span></div>
+            <div class="hud-mech-risk" id="hud-risk">力线正常 · 负荷均衡</div>
+          </div>
+          <div class="hud-mech-cap">胫股关节接触力</div>
+          <div class="hud-mech-split">
+            <div class="hud-split-label"><span>内侧</span><b id="hud-medial">55%</b></div>
+            <div class="hud-split-bar"><i id="hud-bar-medial"></i><i id="hud-bar-lateral"></i></div>
+            <div class="hud-split-label"><span>外侧</span><b id="hud-lateral">45%</b></div>
+          </div>
+          <div class="hud-mech-meta"><span>力线偏移 <b id="hud-shift">2 mm</b></span><span>Q角 <b id="hud-q">15°</b></span></div>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-row"><span>当前动作</span><b id="hud-clip">标准深蹲</b></div>
+        <div class="hud-row"><span>屈膝角度</span><b id="hud-angle">0°</b></div>
+        <div class="hud-row"><span>峰值应力</span><b id="hud-stress">0.00</b></div>
+        <div class="hud-row"><span>应力部位</span><b id="hud-part">—</b></div>
+      </div>
+
+      <!-- 膝关节特写（画中画）：位置由 main.js 按单/分屏计算 -->
+      <div class="body-inset" id="body-inset-0" hidden>
+        <span class="body-inset-scene">膝关节特写</span>
+        <span class="body-inset-title">受力关节特写</span>
+        <span class="body-inset-sub">点击部件查看 · 空白处切换</span>
+        <span class="body-inset-swap">⇄</span>
+      </div>
+      <div class="body-inset" id="body-inset-1" hidden>
+        <span class="body-inset-scene">膝关节特写</span>
+        <span class="body-inset-title">受力关节特写</span>
+        <span class="body-inset-sub">点击部件查看 · 空白处切换</span>
+        <span class="body-inset-swap">⇄</span>
+      </div>
+
+      <!-- 加载 / 提示浮层 -->
+      <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text">正在初始化三维场景…</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ---------- 右：控制面板 ---------- -->
+  <aside class="panel" id="panel">
+
+    <!-- 控制区：内容多时可独立滚动，科普区始终可见 -->
+    <div class="panel-scroll">
+
+    <!-- 1. 场景模式 + 视图模式（合并成一张卡，节省纵向空间） -->
+    <div class="card">
+      <div class="card-head"><h2>动作库</h2><span class="hint">15 类 · 30 段</span></div>
+      <div class="seg" id="seg-mode">
+        <!-- 分组模式目录由 uiCtrl.js 依据 motions.js 动态生成 -->
+      </div>
+    </div>
+
+    <!-- 2. 姿态 -->
+    <div class="card">
+      <div class="card-head"><h2>姿态选择</h2><span class="hint">正误动作对比</span></div>
+      <div class="pose-grid" id="pose-grid">
+        <button class="pose-btn is-active" data-pose="correct">
+          <span class="pose-icon ok">✓</span>
+          <span class="pose-main">标准姿态</span>
+          <span class="pose-sub">力线对齐 · 受力均匀</span>
+        </button>
+        <button class="pose-btn" data-pose="wrong">
+          <span class="pose-icon bad">!</span>
+          <span class="pose-main">错误姿态</span>
+          <span class="pose-sub" id="pose-wrong-sub">膝内扣 · 内侧挤压</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 3. 动画控制 -->
+    <div class="card">
+      <div class="card-head"><h2>动画控制</h2><span class="hint" id="hint-speed">0.8× 慢放</span></div>
+      <div class="btn-row">
+        <button class="btn primary" id="btn-play">暂停</button>
+        <button class="btn" id="btn-reset">重置</button>
+      </div>
+      <input class="range" type="range" id="timeline" min="0" max="1000" value="0" step="1" />
+      <div class="inline-row">
+        <label class="mini-label" for="speed">速度</label>
+        <input class="range" type="range" id="speed" min="0.2" max="1.6" step="0.1" value="0.8" />
+        <span class="mini-value" id="speed-value">0.8×</span>
+      </div>
+      <div class="seg-row">
+        <span class="mini-label">视图</span>
+        <div class="seg" id="seg-view">
+          <button class="seg-btn is-active" data-view="single">单视图</button>
+          <button class="seg-btn" data-view="split">左右分屏对比</button>
+        </div>
+      </div>
+      <label class="switch-row" style="margin-top:10px" id="body-toggle-row">
+        <span id="body-toggle-label">显示膝关节特写</span>
+        <input type="checkbox" id="body-toggle" checked />
+        <i class="switch"></i>
+      </label>
+      <p class="tip" id="body-tip">主画面为真实人体解剖模型，可拖拽旋转查看姿态与场景；右上角小窗是正在仿真的膝关节特写，与全身同步屈伸，点击部件可查看解剖说明。</p>
+    </div>
+
+    <!-- 4. 受力热力（答辩常演：关闭后红色立刻消失） -->
+    <div class="card">
+      <div class="card-head"><h2>受力热力仿真</h2></div>
+      <label class="switch-row">
+        <span>开启应力热力高亮</span>
+        <input type="checkbox" id="heat-toggle" checked />
+        <i class="switch"></i>
+      </label>
+      <div class="stress-meter">
+        <div class="stress-fill" id="stress-fill"></div>
+      </div>
+      <p class="tip" id="stress-tip">科普级映射仿真，非有限元求解结果。</p>
+    </div>
+
+    <!-- 4b. 力学证据：用带单位的量解释"为什么伤"，肉眼可判读 -->
+    <div class="card">
+      <div class="card-head"><h2>力学证据</h2><span class="hint" id="mech-risk">力线正常</span></div>
+      <div class="mech-hero">
+        <div class="mech-hero-num"><b id="mech-force">1.0</b><span>×BW</span></div>
+        <div class="mech-hero-cap">胫股关节接触力<br /><small>体重倍数 · 峰值</small></div>
+      </div>
+      <div class="mech-bar">
+        <div class="mech-bar-label"><span>内侧间室</span><b id="mech-medial">55%</b></div>
+        <div class="mech-bar-track"><i id="mech-bar-medial"></i><i id="mech-bar-lateral"></i></div>
+        <div class="mech-bar-label"><span>外侧间室</span><b id="mech-lateral">45%</b></div>
+      </div>
+      <div class="mech-grid">
+        <div class="mech-cell"><span>负重力线偏移</span><b id="mech-shift">2 mm</b></div>
+        <div class="mech-cell"><span>Q 角</span><b id="mech-q">15°</b></div>
+        <div class="mech-cell"><span>膝内收力矩</span><b id="mech-kam">2.8 N·m/kg</b></div>
+        <div class="mech-cell"><span>屈膝角</span><b id="mech-flex">0°</b></div>
+      </div>
+      <p class="tip">依据文献量级映射（J Biomech 2016 等），用于教学判读，非个体化有限元结果。</p>
+    </div>
+
+    <!-- 5. 解剖图层（显隐 / 透明度） -->
+    <div class="card">
+      <div class="card-head"><h2>解剖图层</h2><span class="hint">显隐 / 透明度</span></div>
+      <div class="layers" id="layers">
+        <!-- 由 uiCtrl.js 动态生成，避免 HTML 与数据重复维护 -->
+      </div>
+      <div class="btn-row">
+        <button class="btn tiny" id="btn-layer-all">全部显示</button>
+        <button class="btn tiny" id="btn-layer-solo">只看骨性结构</button>
+      </div>
+    </div>
+
+    <!-- 6. 结构信息（点击拾取后出现） -->
+    <div class="card part-card" id="part-card" hidden>
+      <div class="card-head">
+        <h2 id="part-name">结构名称</h2>
+        <button class="icon-btn" id="part-close" title="关闭">✕</button>
+      </div>
+      <p class="part-tag" id="part-tag">—</p>
+      <p class="part-desc" id="part-desc">—</p>
+    </div>
+
+    </div><!-- /panel-scroll -->
+
+    <div class="scroll-more" id="scroll-more">向下滑动查看更多设置</div>
+
+    <!-- 7. 科普文本（固定在面板下半部，切换姿态时内容自动更新） -->
+    <div class="card science">
+      <div class="card-head">
+        <h2 id="sci-title">标准深蹲 · 力线对齐</h2>
+        <span class="tag" id="sci-tag">低风险</span>
+      </div>
+      <p class="sci-principle" id="sci-principle">—</p>
+
+      <h3 class="sci-h">损伤 / 风险要点</h3>
+      <ul class="sci-list" id="sci-injury"></ul>
+
+      <h3 class="sci-h">康复与矫正建议</h3>
+      <ul class="sci-list" id="sci-rehab"></ul>
+
+      <div class="sci-note">
+        <b>提示：</b><span id="sci-note">切换姿态或场景，科普内容会自动同步更新。</span>
+      </div>
+    </div>
+
+  </aside>
+</main>
+
+<!-- ============ 底部免责声明 ============ -->
+<footer class="footer">
+  <p>
+    <b>免责声明：</b>本系统为运动康复科普与教学演示工具，采用简化的力学映射模型模拟应力分布，
+    不是有限元（FEA）计算结果，不具备临床诊断、生物力学测量与个体化评估能力，
+    不能替代医师、康复治疗师的专业判断。如有膝关节疼痛或损伤，请及时就医。
+  </p>
+  <p class="footer-meta">
+    膝关节三维模型：<a href="https://anatomytool.org/content/open3dmodel-knee-english-labels" target="_blank" rel="noopener">Open3DModel – Knee</a>
+    （基于 <a href="https://www.z-anatomy.com" target="_blank" rel="noopener">Z-Anatomy</a> · BodyParts3D / 日本 DBCLS），CC BY-SA 4.0；
+    全身人体模型：<a href="https://github.com/ashemag/human-atlas" target="_blank" rel="noopener">human-atlas</a>（MIT）
+    · <a href="https://bodyparts3d.jp" target="_blank" rel="noopener">BodyParts3D</a> / 日本 DBCLS，CC BY 4.0；
+    盾形髌骨重建、半透明呈现、受力着色、力学证据映射、17 骨骼蒙皮人体、15 类动作库与动作绑定、动作场景化道具为本项目自研。
+    · Three.js r147 · 纯前端静态页面 · 适合 GitHub Pages 部署 · 毕业设计演示版
+  </p>
+</footer>
+
+<!-- ============ 使用说明弹窗 ============ -->
+<div class="modal" id="usage-modal" hidden>
+  <div class="modal-mask" data-close="1"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-head">
+      <h2 id="modal-title">使用说明</h2>
+      <button class="icon-btn" id="modal-close" title="关闭">✕</button>
+    </div>
+    <div class="tabs" id="modal-tabs">
+      <button class="tab is-active" data-tab="model">替换 GLB 模型</button>
+      <button class="tab" data-tab="anim">Blender 添加动画</button>
+      <button class="tab" data-tab="deploy">部署 GitHub Pages</button>
+    </div>
+    <div class="modal-body">
+      <div class="tab-pane is-active" data-pane="model">
+        <h3>1. 准备分层模型</h3>
+        <p>膝关节模型必须 <b>按部件分开命名</b>，否则无法单独控制显隐、透明度与热力高亮。建议在 Blender 中拆分后导出：</p>
+        <table class="tbl">
+          <thead><tr><th>部件</th><th>建议对象名（包含关键词即可）</th></tr></thead>
+          <tbody>
+            <tr><td>股骨</td><td>Femur / femur</td></tr>
+            <tr><td>胫骨</td><td>Tibia / tibia</td></tr>
+            <tr><td>胫骨平台</td><td>Tibia_Plateau</td></tr>
+            <tr><td>髌骨</td><td>Patella / patella</td></tr>
+            <tr><td>内侧半月板</td><td>Meniscus_Medial</td></tr>
+            <tr><td>外侧半月板</td><td>Meniscus_Lateral</td></tr>
+            <tr><td>交叉 / 侧副韧带</td><td>ACL / PCL / MCL / LCL</td></tr>
+          </tbody>
+        </table>
+        <h3>2. 放置文件</h3>
+        <p>导出为 GLB（推荐，含动画）后放到 <code>assets/models/knee.glb</code>，刷新页面即自动加载；若文件不存在或解析失败，系统会自动回退到内置解析模型，页面不会报错空白。</p>
+        <h3>3. 其他注意事项</h3>
+        <ul>
+          <li>面数建议控制在 15 万三角面以内，导出时勾选 Draco 压缩可显著减小体积（本项目未启用 Draco，如需启用请自行加载解码器）。</li>
+          <li>模型的「膝关节屈伸中心」最好放在世界原点附近，相机会自动按包围盒取景。</li>
+          <li>可用 <code>index.html?model=assets/models/你的模型.glb</code> 临时指定其他模型路径。</li>
+        </ul>
+      </div>
+
+      <div class="tab-pane" data-pane="anim">
+        <h3>1. 动作库结构（15 类 × 正误 = 30 段）</h3>
+        <p>全部动作集中在 <code>js/motions.js</code> 这一个数据源里，按四个主题分组：</p>
+        <ul>
+          <li><b>日常步态</b>：平地行走、上楼梯、下楼梯、坐站转移、上坡。</li>
+          <li><b>训练力量</b>：深蹲、弓步蹲、硬拉、骑行。</li>
+          <li><b>冲击落地</b>：跑步、纵跳落地、单腿跳、下坡跑。</li>
+          <li><b>球类变向</b>：侧切变向、踢球。</li>
+        </ul>
+        <p>每类动作都有「标准 / 错误」两段，例如 <code>anim_squat_correct</code> 与 <code>anim_squat_valgus</code>。
+           每段包含：膝关节轨道（屈伸 / 外翻 / 胫骨旋转 / 股骨内收）、应力-时间曲线、全身姿态曲线、力学锚点与科普文案。</p>
+        <h3>2. 新增或修改动作</h3>
+        <ol>
+          <li>在 <code>motions.js</code> 的 <code>M</code> 对象里仿照现有条目新增一个模式，填好 <code>knee / stress / profile / body / info</code> 五部分。</li>
+          <li>把它加入 <code>MODES</code> 数组并归入某个 <code>GROUPS</code> 分组，UI 目录、力学读数、科普文案、全身小窗会自动接入，无需改动其它文件。</li>
+          <li>膝轨道单位为「度」，全身姿态曲线单位为「弧度」；正确姿态的应力曲线整体压在 0.2 以下（阈值 0.25 全程不显红）。</li>
+        </ol>
+        <h3>3. 替换 GLB 自带骨骼动画</h3>
+        <p>若 <code>knee.glb</code> 自带 Blender 烘好的 clip，系统按名称模糊匹配优先使用；
+           动作库中 GLB 未提供的其余动作，会用相同的关节节点名（<code>FemurPivot / TibiaPivot / PatellaPivot / KneeRoot</code>）自动合成补齐，保证 30 段全部可播。
+           在 Blender 中把 Action 重命名为对应 key、勾选 Fake User、导出时勾选 Animation 即可。</p>
+        <h3>4. 全身人体主画面与膝关节特写</h3>
+        <p>画布主体渲染的是<b>真实人体解剖模型</b>（écorché：浅层肌肉 + 骨骼，来自 human-atlas / BodyParts3D），
+           由 <code>assets/models/human.json + human.bin</code> 提供网格，<code>js/bodyFigure.js</code> 用 17 根骨骼做线性混合蒙皮；
+           可用鼠标拖拽旋转、滚轮缩放。它读取 <code>motions.js</code> 的 <code>bodyOf()</code> 姿态曲线，与膝关节动画共用归一化进度同步摆姿；
+           资产加载期间回退程序化玻璃人，fetch 被禁（如 file:// 双击打开）时自动改用内嵌副本 <code>human-data.js</code>，两者皆失败才保留玻璃人，永不白屏。
+           人体右膝处的橙色环随应力升高变红，蓝色粗线是“髋→膝→踝”负重力线，灰色竖线是重力参考，膝内扣时膝中心明显偏离参考线。</p>
+        <p>画布<b>右上角</b>的小窗是正在仿真的膝关节特写（<code>knee.glb</code> 分层模型）：分屏对比时左右各一，分别对应标准 / 错误姿态；
+           热力着色、图层显隐、部件点击拾取均作用于此窗。面板「显示膝关节特写」开关可将其隐藏。</p>
+        <p><b>点击小窗</b>（部件以外的空白处）即可把两个视图<b>对调</b>：膝关节特写成为主画面、人体缩到右上角小窗，再点小窗即切回人体主视角。
+           人体与膝关节特写都可以<b>拖拽旋转 / 滚轮缩放</b>，两个视角按同一世界方位实时联动（拖哪边，另一边即刻跟随）。</p>
+        <h3>5. 力学证据读数</h3>
+        <p>画布左下角与右侧面板的接触力（×BW）、内外侧间室分配、力线偏移、Q角、KAM 由 <code>js/biomech.js</code> 计算，
+           锚点同样取自 <code>motions.js</code> 的 <code>profiles()</code>。这些值依据公开文献量级做教学映射，不是有限元或个体化测量结果。</p>
+      </div>
+
+      <div class="tab-pane" data-pane="deploy">
+        <h3>1. 创建仓库</h3>
+        <pre><code>git init
+git add .
+git commit -m "feat: knee simulation site"
+git branch -M main
+git remote add origin https://github.com/你的用户名/你的仓库名.git
+git push -u origin main</code></pre>
+        <h3>2. 开启 Pages</h3>
+        <ol>
+          <li>进入仓库 <b>Settings → Pages</b>。</li>
+          <li>Source 选择 <b>Deploy from a branch</b>，分支选 <code>main</code>，目录选 <code>/ (root)</code>，保存。</li>
+          <li>等待 1–2 分钟，访问 <code>https://你的用户名.github.io/你的仓库名/</code>。</li>
+        </ol>
+        <h3>3. 必须注意</h3>
+        <ul>
+          <li>所有资源使用 <b>相对路径</b>（本项目已全部使用相对路径），不要写 <code>/js/main.js</code> 这类绝对路径。</li>
+          <li>文件名区分大小写，<code>knee.glb</code> 与 <code>Knee.glb</code> 在 Pages 上会被视为不同文件。</li>
+          <li>仓库若开启私有，Pages 需付费方案；毕业设计用公开仓库即可。</li>
+          <li>仓库根目录已带 <code>.nojekyll</code>；Three.js 依赖随仓库本地提供，不依赖外网 CDN。</li>
+          <li>本地预览建议用 <code>python -m http.server</code> 或 VS Code Live Server；新版 Chrome / Edge 直接双击 <code>index.html</code> 通常也能加载，个别浏览器限制本地文件时会自动回退内置模型。</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Three.js 依赖（本地 vendor 优先；CDN 仅作兜底） ============ -->
+<!-- 依赖已随仓库提交：GitHub Pages / 离线答辩 / 校园网都不依赖外网 CDN -->
+<script src="js/vendor/three.min.js?v=20261118d"></script>
+<script>if (!window.THREE) document.write('<script src="https://unpkg.com/three@0.147.0/build/three.min.js"><\/script>');</script>
+<script src="js/vendor/OrbitControls.js?v=20261118d"></script>
+<script>if (!window.THREE || !THREE.OrbitControls) document.write('<script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"><\/script>');</script>
+<script src="js/vendor/GLTFLoader.js?v=20261118d"></script>
+<script>if (!window.THREE || !THREE.GLTFLoader) document.write('<script src="https://unpkg.com/three@0.147.0/examples/js/loaders/GLTFLoader.js"><\/script>');</script>
+<script src="js/vendor/SkeletonUtils.js?v=20261118d"></script>
+<script>if (!window.THREE || !THREE.SkeletonUtils) document.write('<script src="https://unpkg.com/three@0.147.0/examples/js/utils/SkeletonUtils.js"><\/script>');</script>
+
+<!-- ============ 业务模块（加载顺序不可随意调整） ============ -->
+<!-- motions.js 必须最先加载：它是 30 段动作的唯一数据源（不依赖 THREE），
+     biomech / animationCtrl / bodyFigure / uiCtrl 都在初始化时读取它 -->
+<script src="js/embed.js?v=20261118d"></script>
+<script src="js/motions.js?v=20261118d"></script>
+<script src="js/biomech.js?v=20261118d"></script>
+<script src="js/sceneKit.js?v=20261118d"></script>
+<script src="js/bodyFigure.js?v=20261118d"></script>
+<script src="js/animationCtrl.js?v=20261118d"></script>
+<script src="js/modelLoader.js?v=20261118d"></script>
+<script src="js/stressShader.js?v=20261118d"></script>
+<script src="js/rayPick.js?v=20261118d"></script>
+<script src="js/uiCtrl.js?v=20261118d"></script>
+<script src="js/main.js?v=20261118d"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# 本地工具与记录（不参与 GitHub Pages 部署）
+node_modules/
+.workbuddy/
+*.log
+
+# Blender 抽取缓存 / 源图谱 / 检查渲染（体积大或一次性的，不入库）
+tools/atlas/
+tools/_inspect/
+
+# 旧版截图（已被 docs/screenshots 取代，仅本地留档）
+docs/archive/
